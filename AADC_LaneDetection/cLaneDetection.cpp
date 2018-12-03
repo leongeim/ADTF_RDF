@@ -461,7 +461,7 @@ tResult cLaneDetection::Init(tInitStage eStage, __exception)
 
 		RETURN_IF_FAILED(pTypeWheelData->GetInterface(IID_ADTF_MEDIA_TYPE_DESCRIPTION, (tVoid**)&m_pDescriptionWheelLeftData));
 		RETURN_IF_FAILED(pTypeWheelData->GetInterface(IID_ADTF_MEDIA_TYPE_DESCRIPTION, (tVoid**)&m_pDescriptionWheelRightData));
-		RETURN_IF_FAILED(pTypeManeuverData->GetInterface(IID_ADTF_MEDIA_TYPE_DESCRIPTION, (tVoid**)&m_pDescriptionManeuverData));
+		//RETURN_IF_FAILED(pTypeManeuverData->GetInterface(IID_ADTF_MEDIA_TYPE_DESCRIPTION, (tVoid**)&m_pDescriptionManeuverData));
 
 		// Video Output GCL
 		m_oGCLOutputPin.Create("GCL", new adtf::cMediaType(MEDIA_TYPE_COMMAND, MEDIA_SUBTYPE_COMMAND_GCL), static_cast<IPinEventSink*>(this));
@@ -501,9 +501,6 @@ tResult cLaneDetection::Init(tInitStage eStage, __exception)
 
 		RETURN_IF_FAILED(m_oInputSpeedController.Create("SpeedcontrollerIn", pTypeSignalValue, static_cast<IPinEventSink*>(this)));
 		RETURN_IF_FAILED(RegisterPin(&m_oInputSpeedController));
-
-		RETURN_IF_FAILED(m_oOutputSpeedController.Create("SpeedcontrollerOut", pTypeSignalValue, static_cast<IPinEventSink*>(this)));
-		RETURN_IF_FAILED(RegisterPin(&m_oOutputSpeedController));
 	}
 	else if (eStage == StageNormal)
 	{
@@ -638,44 +635,6 @@ tResult cLaneDetection::OnPinEvent(IPin* pSource, tInt nEventCode, tInt nParam1,
 			RETURN_IF_FAILED(UpdateInputImageFormat(m_oVideoInputPin.GetFormat()));
 		}
 	}
-
-	RETURN_NOERROR;
-}
-
-tResult cLaneDetection::TransmitSpeed(tFloat32 speed, tUInt32 timestamp)
-{
-	//use mutex
-	__synchronized_obj(m_critSecTransmitControl);
-
-	//init mediasample
-	cObjectPtr<IMediaSample> pMediaSample;
-	//allocate memory to mediasample
-	AllocMediaSample((tVoid**)&pMediaSample);
-
-	//create interaction with ddl
-	cObjectPtr<IMediaSerializer> pSerializer;
-	m_pDescriptionSignalValue->GetMediaSampleSerializer(&pSerializer);
-
-	//allocate buffer to write in mediasample
-	pMediaSample->AllocBuffer(pSerializer->GetDeserializedSize());
-	{
-		//write lock
-		__adtf_sample_write_lock_mediadescription(m_pDescriptionSignalValue, pMediaSample, pCoderInput);
-
-		//Set all Ids
-		if (!m_szIdOutputSpeedSet)
-		{
-			pCoderInput->GetID("f32Value", m_szIdOutputspeedControllerValue);
-			pCoderInput->GetID("ui32ArduinoTimestamp", m_szIdOutputspeedControllerTimeStamp);
-			m_szIdOutputSpeedSet = tTrue;
-		}
-
-		pCoderInput->Set(m_szIdOutputspeedControllerValue, (tVoid*)&speed);
-		pCoderInput->Set(m_szIdOutputspeedControllerTimeStamp, (tVoid*)&timestamp);
-	}
-
-	pMediaSample->SetTime(_clock->GetStreamTime());
-	m_oOutputSpeedController.Transmit(pMediaSample);
 
 	RETURN_NOERROR;
 }
@@ -1102,21 +1061,6 @@ tResult cLaneDetection::detectLane(Mat & outputImage, vector<Vec4i> &lines, Vec4
 		}
 	}
 	else {
-		if (m_filterProperties.testBool) {
-			if (!isOnLeftLane) {
-				SwitchToLaneLeft();
-
-				//LOG_INFO("SWITCHING TO LEFT LANE");
-				m_filterProperties.testBool = false;
-			}
-			else if (isOnLeftLane) {
-				SwitchToLaneRight();
-
-				//LOG_INFO("SWITCHING TO RIGHT LANE");
-				m_filterProperties.testBool = false;
-			}
-		}
-
 		for (unsigned int i = 0; i < lines.size(); i++) {
 			int xVal = lines[i][0];
 			int yVal = lines[i][1];
@@ -1285,25 +1229,7 @@ tResult cLaneDetection::detectLane(Mat & outputImage, vector<Vec4i> &lines, Vec4
 			faultyLineCounterRight = (wheelCountLeft + wheelCountRight) / 2;
 		}
 
-		if (faultyLineCounterRight == -1 && !rightLineBuffer.empty()) {
-			nearestLineToCarRight = computeNearestLineToCar(rightLine, "right");
-		}
-		else {
-			nearestLineToCarRight = computeNearestLineToCar(rightLineBuffer, "right");
-		}
-		if (faultyLineCounterLeft == -1 && !leftLineBuffer.empty()) {
-			nearestLineToCarLeft = computeNearestLineToCar(leftLine, "left");
-
-		}
-		else {
-			nearestLineToCarLeft = computeNearestLineToCar(leftLineBuffer, "left");
-		}
-		if (faultyLineCounterMiddle == -1 && !middleLineBuffer.empty()) {
-			nearestLineToCarMiddle = computeNearestLineToCar(middleLine, "middle");
-		}
-		else {
-			nearestLineToCarMiddle = computeNearestLineToCar(middleLineBuffer, "middle");
-		}
+		
 
 		// Wir haben eine straﬂe
 		if (faultyLineCounterLeft == -1 && faultyLineCounterMiddle == -1 && faultyLineCounterRight == -1) {

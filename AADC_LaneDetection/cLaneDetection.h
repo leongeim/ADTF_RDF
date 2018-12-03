@@ -261,15 +261,11 @@ private: // private methods
 
     tResult TransmitSpeed(tFloat32 speed, tUInt32 timestamp);
 
-    tResult TransmitBoolValue(cOutputPin* oPin, bool value, tUInt32 timestamp);
-
     /*! function to set the output image format
     *   \param outputImage the new format for the input pin
     *   \return Standard Result Code.
     */
     tResult UpdateOutputImageFormat(const cv::Mat& outputImage);
-
-    tResult TransmitTicksToCrosspoint(int ticksToLine);
 
     /*! function to process the mediasample
     *   \param pSample the new media sample
@@ -493,7 +489,6 @@ private: // private methods
     void calculateROI(cv::Mat& outputImage, Point** poly);
     tFloat32 computeAngleFromVec4i(const Vec4i vector);
     tFloat32 computeRadianFromVec4i(const Vec4i vector);
-    Vec4i computeNearestLineToCar(vector<Vec4i> &lineVector, string lanePosition);
     tResult detectLines(Mat &outputImage, vector<Vec4i> &detectedLines);
     tResult detectLane(Mat &outputImage, vector<Vec4i> &lines, Vec4i &nearestLineToCarRight, Vec4i &nearestLineToCarMiddle, Vec4i &nearestLineToCarLeft);
     tResult adaptROI(Vec4i &lineRight, Vec4i &lineMiddle, Vec4i &lineLeft);
@@ -502,23 +497,10 @@ private: // private methods
     tResult ProcessWheelSampleLeft(IMediaSample* pMediaSample);
     tResult ProcessWheelSampleRight(IMediaSample* pMediaSample);
     tResult GetSpeed(IMediaSample* pMediaSample);
-    tResult detectStopLines(vector<Vec4i> &lines, vector<stopLine>&stopLines, vector<stopLine>&stopLinesHorizontal, Mat &outputImage);
-    tResult setManeuvers(vector<maneuver> man);
-    tResult processManeuvers(IMediaSample* pMediaSample);
     tResult perspective_to_maps(const cv::Mat &perspective_mat, const cv::Size &img_size,
                               cv::Mat &map1, cv::Mat &map2);
-    tResult checkCrossManeuver(vector<Point> &rightCrossPoint, vector<Point> &leftCrossPoint, Vec4i gapVectorVertical, Vec4i gapVectorHorizontal);
-    tResult transmitManeuverFinished(tInt16 maneuverID);
-    tResult detectParkingSpot(vector<Vec4i> &lines, bool& successful, int& y_offset, Mat& outputImage);
-    tResult detectEmergencyHorizontalStoplines(vector<Vec4i> lines, vector<stopLine> &stopLinesHorizontal);
-    tResult SwitchToLaneLeft();
-    tResult SwitchToLaneRight();
-    tResult checkParkingManeuver(vector<Vec4i> &lines, Mat& outputImage);
-    tResult TransmitParkingspaces(cOutputPin* oPin, vector<bool> parkingSpaces);
-    tResult parkingSpaceSearch(vector<Vec4i> &lines, vector<bool> &parkingSpaces, Mat& outputImage);
-    tBool Intersection(Vec4i Vec1, Vec4i Vec2);
-    tBool IntersectionUL(Vec4i line, int upperX,int lowerX,int upperY,int lowerY);
-    tResult detectCrossPoints(Mat& outputImage, vector<Vec4i> &lines, vector<Point> &rightCrossPoints, vector<Point> &leftCrossPoints, Vec4i &gapVectorVertical, Vec4i &gapVectorHorizontal, Vec4i &nearestLineToCarRight);
+
+   
 };
 
 /** @} */ // end of group
