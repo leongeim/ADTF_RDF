@@ -180,11 +180,7 @@ tResult cStateMachine::Init(tInitStage eStage, __exception)
 
 		// speed control
 		m_actualSpeedState = 0;
-		m_actualSpeedLaneDetection = NO_LD_SPEED;
-		m_actualSpeedCarDetection = DEFAULT_SPEED;
-		m_actualSpeedChildDetection = DEFAULT_SPEED;
-		m_actualSpeedAdultDetection = DEFAULT_SPEED;
-		m_actualSpeedTrafficSignDetection = DEFAULT_SPEED;
+		m_actualSpeedLaneDetection = NO_LD_SPEED;		
 		m_actualSpeed_changed = false;
 		m_actualSpeedUpFactor = 1.0;
 		m_maxSpeedUpFactor = 1.0;
@@ -196,11 +192,7 @@ tResult cStateMachine::Init(tInitStage eStage, __exception)
 		m_EmergencyBreakSince = INT32_MIN;
 
 		// tick stamps
-		m_actualWheelTicks = 0;		
-
-		// initialize translation and rotation vectors
-		
-
+		m_actualWheelTicks = 0;
 
 		m_maxSpeedUpFactor = GetPropertyFloat(SPEEDUP_FACTOR);
 	}
@@ -336,7 +328,7 @@ tResult cStateMachine::ProcessJuryInput(IMediaSample* pMediaSample)
 	RETURN_NOERROR;
 }
 
-tResult cStateMachine::SendState(stateCar stateID, tInt16 i16ManeuverEntry = 0)
+tResult cStateMachine::SendState(stateCar stateID, tInt16 i16ManeuverEntry)
 {
 	cObjectPtr<IMediaSample> pMediaSample;
 	RETURN_IF_FAILED(AllocMediaSample((tVoid**)&pMediaSample));
@@ -674,10 +666,7 @@ tResult cStateMachine::ProcessWheelSampleRight(IMediaSample* pMediaSample)
 
 		pCoderInput->Get(szIDWheelDataUi32WheelTach, (tVoid*)&wheelCountRight);
 
-	}
-
-	if (m_actualWheelTicks == 0)
-		m_lastTicksRelevantSignDetected = m_actualWheelTicks; // to prevent speedup at startup!
+	}	
 
 	m_actualWheelTicks = ((wheelCountLeft + wheelCountRight) / 2);
 
