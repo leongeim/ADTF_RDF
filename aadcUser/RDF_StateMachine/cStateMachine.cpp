@@ -164,10 +164,8 @@ tResult cStateMachine::Init(tInitStage eStage, __exception)
 	}
 	else if (eStage == StageNormal)
 	{
-		m_bIDsStatesStructSet = tFalse;
 		m_szIdEmergencyStopSet = tFalse;
 		m_szIdEmergencyBreakSet = tFalse;
-		m_PosOutputSet = tFalse;
 		m_szIdInputSpeedSet = tFalse;
 		m_szIdOutputSpeedSet = tFalse;
 		m_szIdsUsStructSet = tFalse;
@@ -198,22 +196,10 @@ tResult cStateMachine::Init(tInitStage eStage, __exception)
 		m_EmergencyBreakSince = INT32_MIN;
 
 		// tick stamps
-		m_actualWheelTicks = 0;
-		m_lastTicksRelevantSignDetected = INT32_MAX;
-		m_lastTicksAdultDetected = INT32_MAX;
-		m_lastTimeFollowCarDetected = INT32_MAX;
-		m_lastTicksChildDetected = INT32_MAX;
-		m_lastTicksGiveWaySignDetected = INT32_MAX;
-		m_lastTicksHaveWaySignDetected = INT32_MAX;
-		m_lastTicksPedestrianSignDetected = INT32_MAX;
-		m_lastTicksStopSignDetected = INT32_MAX;
-		m_ticksOfNextCrosspoint = INT32_MAX;
-		m_lastCarCounter = 0;
+		m_actualWheelTicks = 0;		
 
 		// initialize translation and rotation vectors
-		m_state = Mat(6, 1, CV_64F, Scalar::all(0));
-		m_Tvec = Mat(3, 1, CV_32F, Scalar::all(0));
-		m_Rvec = Mat(3, 1, CV_32F, Scalar::all(0));
+		
 
 
 		m_maxSpeedUpFactor = GetPropertyFloat(SPEEDUP_FACTOR);
@@ -329,32 +315,15 @@ tResult cStateMachine::ProcessJuryInput(IMediaSample* pMediaSample)
 
 	if (i8ActionID == action_GETREADY && m_runState != runState_ready)
 	{
-		// update actual sector and  maneuver
-		m_actualManeuverID = i16entry;
-		for (unsigned int i = 0; i < m_sectorList.size(); i++)
-		{
-			tSector s = m_sectorList[i];
-			for (unsigned int k = 0; k < s.maneuverList.size(); k++)
-			{
-				tAADC_Maneuver m = s.maneuverList[k];
-				if (i16entry == m.id)
-				{
-					m_actualSectorID = i;       // set new actual sector index
-					i = m_sectorList.size();    // break out of
-					break;                      // both loops
-				}
-			}
-		}
-
 		//LOG_INFO(cString::Format("State Machine: Received Request Ready with maneuver ID %d",i16entry));
 		ChangeRunState(runState_ready);
-		SendState(stateCar_READY, tInt16(m_actualManeuverID));
+		SendState(stateCar_READY);
 	}
 	else if (i8ActionID == action_START && m_runState != runState_running)
 	{
 		//LOG_INFO(cString::Format("State Machine: Received Run with maneuver ID %d",i16entry));
 		ChangeRunState(runState_running);
-		SendState(stateCar_RUNNING, tInt16(m_actualManeuverID));
+		SendState(stateCar_RUNNING);
 
 	}
 	else if (i8ActionID == action_STOP && m_runState != runState_stop)
@@ -362,12 +331,12 @@ tResult cStateMachine::ProcessJuryInput(IMediaSample* pMediaSample)
 		//LOG_INFO(cString::Format("State Machine: Received Stop with maneuver ID %d",i16entry));
 		ChangeRunState(runState_stop);
 		ChangePrimaryState(primaryState_run);
-		SendState(stateCar_STARTUP, tInt16(m_actualManeuverID));		
+		SendState(stateCar_STARTUP);		
 	}
 	RETURN_NOERROR;
 }
 
-tResult cStateMachine::SendState(stateCar stateID, tInt16 i16ManeuverEntry)
+tResult cStateMachine::SendState(stateCar stateID, tInt16 i16ManeuverEntry = 0)
 {
 	cObjectPtr<IMediaSample> pMediaSample;
 	RETURN_IF_FAILED(AllocMediaSample((tVoid**)&pMediaSample));
@@ -763,195 +732,19 @@ tResult cStateMachine::updateSpeed()
 
 		tFloat32 newSpeed = DEFAULT_SPEED;
 		if (abs(m_actualSpeedState) < abs(newSpeed))
-			newSpeed = m_actualSpeedState;
-
-		if (abs(m_actualSpeedAdultDetection) < abs(newSpeed))
-			newSpeed = m_actualSpeedAdultDetection;
-
-		if (abs(m_actualSpeedCarDetection) < abs(newSpeed) && m_lastCarCounter < 400)
-			newSpeed = m_actualSpeedCarDetection;
-
-		if (abs(m_actualSpeedChildDetection) < abs(newSpeed))
-			newSpeed = m_actualSpeedChildDetection;
-
-		if (abs(m_actualSpeedTrafficSignDetection) < abs(newSpeed))
-			newSpeed = m_actualSpeedTrafficSignDetection;
+			newSpeed = m_actualSpeedState;		
 
 		if (newSpeed == DEFAULT_SPEED)
 		{
-			newSpeed *= m_actualSpeedUpFactor;
-			
+			newSpeed *= m_actualSpeedUpFactor;			
 		}
-
 
 		if (m_actualSpeedLaneDetection != NO_LD_SPEED && m_actualSpeedState != 0)
 		{
 			newSpeed = m_actualSpeedLaneDetection;
 		}
 
-		
-		//LOG_INFO(cString::Format("speed %f", newSpeed));
 		TransmitSpeed(newSpeed, 0);
-	}
-
-	m_lastCarCounter++;
-
-	RETURN_NOERROR;
-}
-
-tResult cStateMachine::checkTickAndTimeStemps()
-{
-	// pedestrianSign detected less than 300 ticks ago
-	if (m_actualWheelTicks < m_lastTicksPedestrianSignDetected + 300)
-	{
-		m_actualSpeedTrafficSignDetection = DEFAULT_SPEED * 0.7;
-		m_actualSpeed_changed = true;
-	}
-	else if (m_actualSpeedTrafficSignDetection != DEFAULT_SPEED && m_actualSpeedTrafficSignDetection != 0)
-	{
-		m_actualSpeedTrafficSignDetection = DEFAULT_SPEED;
-		m_actualSpeed_changed = true;
-	}
-
-	// GiveWaySign detected less than 300 ticks ago && car passed the stopline
-	if ((m_actualWheelTicks < m_lastTicksGiveWaySignDetected + 300)
-		&& (m_actualWheelTicks > m_ticksOfNextCrosspoint))
-	{
-		// No car detected for at least 3 seconds
-		if ((adtf_util::cHighResTimer::GetTime() - m_lastTimeCarDetected) > 3000000)
-		{
-			m_actualSpeedTrafficSignDetection = DEFAULT_SPEED;
-			m_actualSpeed_changed = true;
-			m_ticksOfNextCrosspoint = INT32_MAX;
-		}
-		else  // car detected less than 3 seconds ago
-		{
-			m_actualSpeedCarDetection = 0;
-			m_actualSpeed_changed = true;
-			m_lastTimeStopp = adtf_util::cHighResTimer::GetTime();
-		}
-	}
-	// GiveWaySign detected less than 300 ticks ago && car did not passed the stopline yet
-	else if ((m_actualWheelTicks < m_lastTicksGiveWaySignDetected + 300)
-		&& (m_actualWheelTicks > m_ticksOfNextCrosspoint - 100))
-	{
-		m_actualSpeedTrafficSignDetection = DEFAULT_SPEED * 0.7;
-		m_actualSpeed_changed = true;
-	}
-
-	// StopSign detected less than 300 ticks ago && car is at the stopline
-	if ((m_actualWheelTicks < m_lastTicksStopSignDetected + 300)
-		&& (m_actualWheelTicks > m_ticksOfNextCrosspoint))
-	{
-		//LOG_INFO(cString::Format("STOP!"));
-		m_actualSpeedTrafficSignDetection = 0;
-		m_actualSpeed_changed = true;
-		m_lastTimeStopp = adtf_util::cHighResTimer::GetTime();
-		m_ticksOfNextCrosspoint = INT32_MAX - 1000;
-	}
-
-	//    else if(m_actualWheelTicks < m_lastTicksStopSignDetected + 300)
-	//    {
-	//        LOG_INFO(cString::Format("Stop sign last 300 ticks, but no stop because %d < %d", m_actualWheelTicks, m_ticksOfNextCrosspoint));
-	//    }
-	//    else if(m_actualWheelTicks > m_ticksOfNextCrosspoint)
-	//    {
-	//        LOG_INFO(cString::Format("crosspoint reached, but no stop because last stopsign %d < %d", m_lastTicksStopSignDetected, m_actualWheelTicks));
-	//    }
-
-	// no child  detected for at least  200 ticks
-	if (m_actualWheelTicks > (m_lastTicksChildDetected)+200)
-	{
-		m_actualSpeedChildDetection = DEFAULT_SPEED;
-		m_actualSpeed_changed = true;
-		m_lastTicksChildDetected = INT32_MAX - 1000;
-	}
-
-	// no car detected for at least  200 ticks
-	//    if(m_actualWheelTicks > (m_lastTicksCarDetected) + 200)
-	//    {
-	//        m_actualSpeedCarDetection = DEFAULT_SPEED;
-	//        m_actualSpeed_changed = true;
-	//        m_lastTicksCarDetected = INT32_MAX - 1000;
-	//    }
-
-	// no adult  detected for at least  200 ticks
-	if (m_actualWheelTicks > (m_lastTicksAdultDetected)+200)
-	{
-		m_actualSpeedAdultDetection = DEFAULT_SPEED;
-		m_actualSpeed_changed = true;
-		m_lastTicksAdultDetected = INT32_MAX - 1000;
-	}
-
-	// car stands still for at least 3 seconds, because another car was detected
-	if ((m_actualSpeedCarDetection == 0) && (adtf_util::cHighResTimer::GetTime() - m_lastTimeStopp > 3000000))
-	{
-		m_actualSpeedCarDetection = DEFAULT_SPEED;
-		m_actualSpeed_changed = true;
-	}
-
-	if ((m_lastTimeFollowCarDetected != INT32_MAX) && (cSystem::GetTime() - m_lastTimeFollowCarDetected) > 2000000)
-	{
-		//LOG_INFO(cString::Format("Folgefahrt beendet, last time follo w%d, dif %d", m_lastTimeFollowCarDetected, cSystem::GetTime() - m_lastTimeFollowCarDetected));
-		m_actualSpeedCarDetection = DEFAULT_SPEED;
-		m_actualSpeed_changed = true;
-		m_lastTimeFollowCarDetected = INT32_MAX;
-	}
-
-
-	// car stands still for at least 3 seconds, because a child at a pedestrian crossing was detected
-	if ((m_actualSpeedChildDetection == 0) && (adtf_util::cHighResTimer::GetTime() - m_lastTimeStopp > 6000000))
-	{
-		m_actualSpeedChildDetection = DEFAULT_SPEED;
-		m_actualSpeed_changed = true;
-	}
-
-	// car stands still for at least 3 seconds, because a adult at a pedestrian crossingS was detected
-	if ((m_actualSpeedAdultDetection == 0) && (adtf_util::cHighResTimer::GetTime() - m_lastTimeStopp > 6000000))
-	{
-		m_actualSpeedAdultDetection = DEFAULT_SPEED;
-		m_actualSpeed_changed = true;
-	}
-
-	// car stands still for at least 3 seconds, because a stopSign was detected
-	if ((m_actualSpeedTrafficSignDetection == 0) && (adtf_util::cHighResTimer::GetTime() - m_lastTimeStopp > 3000000))
-	{
-		if ((adtf_util::cHighResTimer::GetTime() - m_lastTimeCarDetected) > 3000000)
-		{
-			m_actualSpeedTrafficSignDetection = DEFAULT_SPEED;
-			m_actualSpeed_changed = true;
-		}
-		//        else
-		//        {
-		//            LOG_INFO(cString::Format("stop not released, car was in sight %d ago!  time since last stopp %d", adtf_util::cHighResTimer::GetTime() - m_lastTimeCarDetected, adtf_util::cHighResTimer::GetTime() - m_lastTimeStopp));
-		//        }
-	}
-	//    else if(m_actualSpeedTrafficSignDetection == 0)
-	//    {
-	//        LOG_INFO(cString::Format("stop not released, last time stop not more than 3 sec!  time since last stopp %d", adtf_util::cHighResTimer::GetTime() - m_lastTimeStopp));
-	//    }
-
-		// emergencyBreak is activated still at least x seconds
-		//LOG_INFO(cString::Format("runstate: %i   primarystate %i", m_runState, m_primaryState));
-		//LOG_INFO(cString::Format("cSystem::GetTime() - m_EmergencyBreakSince > m_overtakingTreshold    %i > %i", cSystem::GetTime()-m_EmergencyBreakSince ,m_overtakingTreshold));
-	if ((m_runState == runState_running) && (m_primaryState == primaryState_emergencyBreak)
-		&& (cSystem::GetTime() - m_EmergencyBreakSince > m_overtakingTreshold))
-	{
-		//if((m_actualDistances[0] > 50 || m_actualDistances[0] == -1) /*){&&(m_actualDistances[1] > 20 || m_actualDistances[1] == -1)*/){
-			//LOG_INFO("OVERTAKING!!!!");
-		ChangeRunState(runState_overtaking_check);
-		//}
-	}
-
-	// there was no relevant traffic sign last 500 ticks => speed up!
-	if (m_actualWheelTicks > (m_lastTicksRelevantSignDetected + 500))
-	{
-		if (m_actualSpeedUpFactor < m_maxSpeedUpFactor)
-		{
-			m_actualSpeedUpFactor = m_maxSpeedUpFactor;
-			m_actualSpeed_changed = true;
-			m_runState_changed = true;
-		}
 	}
 
 	RETURN_NOERROR;
@@ -1067,8 +860,6 @@ tResult cStateMachine::ComputeNextStep()
 
 		}
 	}
-
-	checkTickAndTimeStemps();
 
 	updateSpeed();
 

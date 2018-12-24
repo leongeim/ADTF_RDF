@@ -30,9 +30,8 @@ THIS SOFTWARE IS PROVIDED BY AUDI AG AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR
 #endif
 #define RAD2DEG static_cast<tFloat32>(180.0/M_PI)
 #define DEG2RAD static_cast<tFloat32>(M_PI/180.0)
-#define DEFAULT_SPEED (-8)
+#define DEFAULT_SPEED (-9)
 #define NO_LD_SPEED 999
-#define DETECTION_THRESHOLD 0.5
 
 
 
@@ -57,19 +56,7 @@ private:
 	tBufferID  m_szIDDriverStructI8StateID;
 	tBufferID  m_szIDDriverStructI16ManeuverEntry;
 	tBool      m_bIDsDriverStructSet;
-
-	// output pin for actual state of this state machine
-	cOutputPin m_ActualStateOutputPin;  //typ tStatesStruct
-	tBufferID  m_szIDStatesStructI8PrimaryState;
-	tBufferID  m_szIDStatesStructI8RunState;
-	tBool      m_bIDsStatesStructSet;
-
-	// output pin for maneuvers
-	cOutputPin m_ManeuverOutputPin;  //typ tManeuverValues
-	tBufferID  m_szManeuverIDOutput;
-	tBufferID  m_szParkingSpaceIDOutput;
-	tBool      m_bIDManeuverSendSet;
-
+	
 	//  input pin for the emergency break status
 	cInputPin m_EmergencyBreakStatusInputPin; //typ tJuryEmergencyStop
 	tBufferID m_szIdEmergencyStopValue;
@@ -77,8 +64,6 @@ private:
 
 	//  input pin for the emergency break status
 	cInputPin m_EmergencyStopInputPin; //typ tJuryEmergencyStop
-
-	cInputPin m_SteeringAngleInputPin; //typ tSignalValue
 
 	cOutputPin  m_oOutputEmergencyBreakSet;  //typ tEmergencyBreakSet
 	tBufferID   m_szIdEmergencyBreakSetFrontLeftValue;
@@ -93,52 +78,9 @@ private:
 	tBufferID   m_szIdEmergencyBreakSetBackRightValue;
 	tBool       m_szIdEmergencyBreakSet;
 
-	cOutputPin m_oOutputHeadLight;    // The output pin for head light
-	cOutputPin m_oOutputReverseLight; // The output pin for reverse light
-	cOutputPin m_oOutputBrakeLight;   // The output pin for brake light
-	cOutputPin m_oOutputHazzardLight; // The output pin for hazzard light
-	cOutputPin m_oOutputTurnRight;    // The output pin for turn right controller
-	cOutputPin m_oOutputTurnLeft;     // The output pin for turn left controller
-	cInputPin m_oInputTurnRight;    // The input pin for turn right controller
-	cInputPin m_oInputTurnLeft;     // The input pin for turn left controller
-
-	cInputPin m_oInputRoadSignExt;   // Input pin for the road sign Ext data
-	tBufferID m_szIDRoadSignExtI16Identifier;
-	tBufferID m_szIDRoadSignExtF32Imagesize;
-	tBufferID m_szIDRoadSignExtAf32TVec;
-	tBufferID m_szIDRoadSignExtAf32RVec;
-	tBool     m_bIDsRoadSignExtSet;
-
-	cInputPin m_oInputClassification;  // input pin for the classification result
 
 	cInputPin    m_oInputWheelLeft;
 	cInputPin    m_oInputWheelRight;
-
-	//Position Output to backend
-	cOutputPin m_OutputPostion;
-	tBufferID m_szF32X, m_szF32Y, m_szF32Radius, m_szF32Speed, m_szF32Heading;
-	tBool m_PosOutputSet;
-
-	//Trafficsign Output to backend
-	cOutputPin m_OutputTrafficSign;
-	tBufferID m_tsI16id, m_tsF32X, m_tsF32Y, m_tsF32Angle;
-	tBool m_TrafficSignOutputSet;
-
-	//Obstacle Output to backend
-	cOutputPin m_OutputObstacle;
-	tBufferID m_obstacleF32X, m_obstacleF32Y;
-	tBool m_ObstacleOutputSet;
-
-	//Parking Output to backend
-	cOutputPin m_OutputParkingSpace;
-	tBufferID m_parkingI16Id, m_parkingF32X, m_parkingF32Y, m_parkingUI16Status;
-	tBool m_ParkingOutputSet;
-
-	// Input pin for finished maneuvers
-	cInputPin  m_oInputManeuverFinished;
-	tBufferID  m_szManeuverIDInput;
-	tBufferID  m_szFinishedManeuverInput;
-	tBool      m_bIDsManeuverFinishedSet;
 
 	// input pin for speed
 	cInputPin   m_oInputSpeedController;   //typ tSignalValue
@@ -158,51 +100,12 @@ private:
 	std::vector<tBufferID> m_szIdUsStructTimeStamps;
 	tBool                  m_szIdsUsStructSet;
 
-	// Input pin for ticks to line
-	cInputPin  m_oInputTicksToLine;
-
-	// input pin for parkingspaces status
-	cInputPin  m_oInputParkingspaces;
-
-	/*! currently processed road-sign */
-	tInt16 m_i16ID;
-	tFloat32 m_f32MarkerSize;
-	Mat m_Tvec; /*! translation vector */
-	Mat m_Rvec; /*! rotation vector */
-
-	tInt m_ui32Cnt;
-
-	// Position input
-	cInputPin  m_oInputPinPosition;        // Input pin for the road sign position
-	tBool m_PosInputSet;
-
-	//  input pin for the maneuver list
-	cInputPin            m_ManeuverListInputPin;
-	cString              m_strManeuverFileString; // The maneuver file string
-	cFilename            m_maneuverListFile;      // this is the filename of the maneuver list
-	std::vector<tSector> m_sectorList;            // this is the list with all the loaded sections(containing the single maneuvers) from the maneuver list
-
-	bool m_hasSentActualManeuver;
-
 	tFloat32 m_actualSpeedState;
-	tFloat32 m_actualSpeedLaneDetection;
-	tFloat32 m_actualSpeedCarDetection;
-	tFloat32 m_actualSpeedChildDetection;
-	tFloat32 m_actualSpeedAdultDetection;
-	tFloat32 m_actualSpeedTrafficSignDetection;
+	tFloat32 m_actualSpeedLaneDetection;	
 	bool     m_actualSpeed_changed;
 	tFloat32 m_actualSpeedUpFactor;
 	tFloat32 m_maxSpeedUpFactor;
-
-	tInt32   m_lastTicksAdultDetected;
-	tInt32   m_lastTicksCarDetected;
-	tInt32   m_lastTicksChildDetected;
-	tInt32   m_lastTicksStopSignDetected;
-	tInt32   m_lastTicksGiveWaySignDetected;
-	tInt32   m_lastTicksHaveWaySignDetected;
-	tInt32   m_lastTicksPedestrianSignDetected;
-	tInt32   m_lastTicksRelevantSignDetected;
-
+	
 	tInt64   m_lastTimeStopp;
 	tInt64   m_lastTimeCarDetected;
 	tInt64   m_lastTimeFollowCarDetected;
@@ -211,19 +114,10 @@ private:
 	bool m_emergencyBreakStatus;
 	bool m_emergencyBreakStatus_changed;
 
-
-	bool m_pos_Initialized;
 	bool m_Emergency_Stop_Jury;
 
 
-	tFloat32 m_actualDistances[10];
-
-	tFloat32 m_f32CameraOffsetLat;
-	tFloat32 m_f32CameraOffsetLon;
-	Mat m_state; /*! filter state {X} */
-	Mat m_errorCov; /*! error covariance matrix {P} */
-	Mat m_processCov; /*! process covariance matrix {Q} */
-	Mat m_transitionMatrix; /*! state transition matrix {F} */
+	tFloat32 m_actualDistances[10];	
 
 	//mediatype descriptions
 	cObjectPtr<IMediaTypeDescription> m_pDescriptionJuryStruct;
@@ -241,20 +135,10 @@ private:
 	bool          m_runState_changed;
 	bool          m_primaryState_changed;
 
-	int m_actualSectorID;   // the id of the actual sector
-	int m_actualManeuverID; // the id of the actual maneuver
-
 	int wheelCountLeft;
 	int wheelCountRight;
 	int m_actualWheelTicks;
-	int m_ticksOfNextCrosspoint;
 
-
-	int m_overtakingTreshold;
-	int m_lastCarCounter;
-
-	cCriticalSection m_critSecTransmitBool; // The critical section transmit bool
-	cCriticalSection m_critSecTransmitManeuver; // The critical section transmit bool
 	cCriticalSection m_critSecTransmitControl;
 	cCriticalSection m_critSecMinimumUsValue;
 
@@ -317,64 +201,39 @@ protected:
 	 * \return  Returns a standard result code.
 	 */
 	tResult SendState(stateCar stateID, tInt16 i16ManeuverEntry);
-
 	
-
-	/*! this function loads the maneuver list given in the properties
-	* \result Returns a standard result code.
-	*/
-	
-
-	tResult TransmitEmergencyBreakSet();
-
-	
-
-	tResult TransmitSpeed(tFloat32 speed, tUInt32 timestamp);
-
-	tResult updateSpeed();
-
-	tResult ChangePrimaryState(primaryStates newPrimaryState);
-
-	tResult ChangeRunState(runStates newRunState);
-
-	tResult ProcessJuryInput(IMediaSample* pMediaSample);
-
-	
-
-	tResult ProcessEmergencyBreakStatus(IMediaSample* pMediaSample);
-
-	tResult ProcessEmergencyStop(IMediaSample* pMediaSample);
-
-	tResult ProcessSpeedController(IMediaSample* pMediaSample);
-
-
-	tResult ProcessUsValues(IMediaSample* pMediaSample);
-
-
-
-	tFloat32 normalizeAngle(tFloat32 alpha, tFloat32 center);
-
-	tFloat32 mod(tFloat32 x, tFloat32 y);
-
-
-
-	tResult ProcessWheelSampleLeft(IMediaSample* pMediaSample);
-
-	tResult ProcessWheelSampleRight(IMediaSample* pMediaSample);
-
-	
-
-	tResult checkTickAndTimeStemps();
-
-	tResult ComputeNextStep();
-
-
 	tResult PropertyChanged(const tChar* strName);
+	
+	#pragma region TransmitOutput
+		tResult TransmitEmergencyBreakSet();
+		tResult TransmitSpeed(tFloat32 speed, tUInt32 timestamp);
+	#pragma endregion
+
+	#pragma region ChangeStates
+		tResult ChangePrimaryState(primaryStates newPrimaryState);
+		tResult ChangeRunState(runStates newRunState);
+	#pragma endregion
+
+	#pragma region Processing
+		tResult updateSpeed();
+		tResult ComputeNextStep();
+	#pragma endregion	
+
+	#pragma region ProcessInputs
+		tResult ProcessJuryInput(IMediaSample* pMediaSample);
+		tResult ProcessEmergencyBreakStatus(IMediaSample* pMediaSample);
+		tResult ProcessEmergencyStop(IMediaSample* pMediaSample);
+		tResult ProcessSpeedController(IMediaSample* pMediaSample);
+		tResult ProcessUsValues(IMediaSample* pMediaSample);
+		tResult ProcessWheelSampleLeft(IMediaSample* pMediaSample);
+		tResult ProcessWheelSampleRight(IMediaSample* pMediaSample);
+	#pragma endregion
+	
+	#pragma region Calculation
+	tFloat32 normalizeAngle(tFloat32 alpha, tFloat32 center);
+	tFloat32 mod(tFloat32 x, tFloat32 y);
+	#pragma endregion	
 };
 
 //*************************************************************************************************
-#endif // _STATE_MACHINE_H_
-
-/*!
-*@}
-*/
+#endif
