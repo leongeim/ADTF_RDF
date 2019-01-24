@@ -30,7 +30,7 @@ THIS SOFTWARE IS PROVIDED BY AUDI AG AND CONTRIBUTORS �AS IS� AND ANY EXPRES
 #endif
 #define RAD2DEG static_cast<tFloat32>(180.0/M_PI)
 #define DEG2RAD static_cast<tFloat32>(M_PI/180.0)
-#define DEFAULT_SPEED (-9)
+#define DEFAULT_SPEED (-10)
 #define NO_LD_SPEED 999
 
 
@@ -56,7 +56,7 @@ private:
 	tBufferID  m_szIDDriverStructI8StateID;
 	tBufferID  m_szIDDriverStructI16ManeuverEntry;
 	tBool      m_bIDsDriverStructSet;
-	
+
 	//  input pin for the emergency break status
 	cInputPin m_EmergencyBreakStatusInputPin; //typ tJuryEmergencyStop
 	tBufferID m_szIdEmergencyStopValue;
@@ -101,11 +101,11 @@ private:
 	tBool                  m_szIdsUsStructSet;
 
 	tFloat32 m_actualSpeedState;
-	tFloat32 m_actualSpeedLaneDetection;	
+	tFloat32 m_actualSpeedLaneDetection;
 	bool     m_actualSpeed_changed;
 	tFloat32 m_actualSpeedUpFactor;
 	tFloat32 m_maxSpeedUpFactor;
-	
+
 	tInt64   m_lastTimeStopp;
 	tInt64   m_lastTimeCarDetected;
 	tInt64   m_lastTimeFollowCarDetected;
@@ -116,11 +116,10 @@ private:
 
 	bool m_Emergency_Stop_Jury;
 
-
-	tFloat32 m_actualDistances[10];	
+	tFloat32 m_actualDistances[10];
 
 	//mediatype descriptions
-	cObjectPtr<IMediaTypeDescription> m_pDescriptionJuryStruct;
+	cObjectPtr<IMediaTypeDescription> m_pDescJuryStruct;
 	cObjectPtr<IMediaTypeDescription> m_pDescriptionDriverStruct;
 	cObjectPtr<IMediaTypeDescription> m_pDescriptionEmergencyStop;
 	cObjectPtr<IMediaTypeDescription> m_pDescriptionEmergencyBreakSet;
@@ -201,9 +200,9 @@ protected:
 	 * \return  Returns a standard result code.
 	 */
 	tResult SendState(stateCar stateID, tInt16 i16ManeuverEntry = 0);
-	
+
 	tResult PropertyChanged(const tChar* strName);
-	
+
 	#pragma region TransmitOutput
 		tResult TransmitEmergencyBreakSet();
 		tResult TransmitSpeed(tFloat32 speed, tUInt32 timestamp);
@@ -217,7 +216,7 @@ protected:
 	#pragma region Processing
 		tResult updateSpeed();
 		tResult ComputeNextStep();
-	#pragma endregion	
+	#pragma endregion
 
 	#pragma region ProcessInputs
 		tResult ProcessJuryInput(IMediaSample* pMediaSample);
@@ -228,11 +227,11 @@ protected:
 		tResult ProcessWheelSampleLeft(IMediaSample* pMediaSample);
 		tResult ProcessWheelSampleRight(IMediaSample* pMediaSample);
 	#pragma endregion
-	
+
 	#pragma region Calculation
 	tFloat32 normalizeAngle(tFloat32 alpha, tFloat32 center);
 	tFloat32 mod(tFloat32 x, tFloat32 y);
-	#pragma endregion	
+	#pragma endregion
 };
 
 //*************************************************************************************************

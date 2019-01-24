@@ -93,13 +93,13 @@ tResult cStateMachine::Init(tInitStage eStage, __exception)
 		cObjectPtr<IMediaDescriptionManager> pDescManager;
 		RETURN_IF_FAILED(_runtime->GetObject(OID_ADTF_MEDIA_DESCRIPTION_MANAGER, IID_ADTF_MEDIA_DESCRIPTION_MANAGER, (tVoid**)&pDescManager, __exception_ptr));
 
-		//Input Jury Struct
-		tChar const * strDescJuryStruct = pDescManager->GetMediaDescription("tJuryStruct");
-		RETURN_IF_POINTER_NULL(strDescJuryStruct);
-		cObjectPtr<IMediaType> pTypeJuryStruct = new cMediaType(0, 0, 0, "tJuryStruct", strDescJuryStruct, IMediaDescription::MDF_DDL_DEFAULT_VERSION);
-		RETURN_IF_FAILED(m_JuryStructInputPin.Create("Jury_Struct", pTypeJuryStruct, this));
+		// input jury struct
+		tChar const * strDesc1 = pDescManager->GetMediaDescription("tJuryStruct");
+		RETURN_IF_POINTER_NULL(strDesc1);
+		cObjectPtr<IMediaType> pType1 = new cMediaType(0, 0, 0, "tJuryStruct", strDesc1, IMediaDescription::MDF_DDL_DEFAULT_VERSION);
+		RETURN_IF_FAILED(m_JuryStructInputPin.Create("Jury_Struct", pType1, this));
 		RETURN_IF_FAILED(RegisterPin(&m_JuryStructInputPin));
-		RETURN_IF_FAILED(pTypeJuryStruct->GetInterface(IID_ADTF_MEDIA_TYPE_DESCRIPTION, (tVoid**)&m_pDescriptionJuryStruct));
+		RETURN_IF_FAILED(pType1->GetInterface(IID_ADTF_MEDIA_TYPE_DESCRIPTION, (tVoid**)&m_pDescJuryStruct));
 
 		// output driver struct
 		tChar const * strDescDriverStruct = pDescManager->GetMediaDescription("tDriverStruct");
@@ -180,7 +180,7 @@ tResult cStateMachine::Init(tInitStage eStage, __exception)
 
 		// speed control
 		m_actualSpeedState = 0;
-		m_actualSpeedLaneDetection = NO_LD_SPEED;		
+		m_actualSpeedLaneDetection = NO_LD_SPEED;
 		m_actualSpeed_changed = false;
 		m_actualSpeedUpFactor = 1.0;
 		m_maxSpeedUpFactor = 1.0;
@@ -190,6 +190,8 @@ tResult cStateMachine::Init(tInitStage eStage, __exception)
 		m_emergencyBreakStatus_changed = false;
 		m_Emergency_Stop_Jury = false;
 		m_EmergencyBreakSince = INT32_MIN;
+
+		m_bIDsJuryStructSet = false;
 
 		// tick stamps
 		m_actualWheelTicks = 0;
@@ -203,13 +205,13 @@ tResult cStateMachine::Init(tInitStage eStage, __exception)
 		// Please take a look at the demo_imageproc example for further reference.
 
 		// simulate ready signal from jury
-		ChangeRunState(runState_ready);
+		//ChangeRunState(runState_ready);
 
 		// simulate start signal from jury
-		ChangeRunState(runState_running);		
+		//ChangeRunState(runState_running);
 
 		m_actualSpeedUpFactor = 1.0;
-
+    m_bIDsJuryStructSet = false;
 		TransmitEmergencyBreakSet();    // set initial E.B. distances
 	}
 	RETURN_NOERROR;
@@ -254,7 +256,7 @@ tResult cStateMachine::OnPinEvent(IPin* pSource,
 
 	if (nEventCode == IPinEventSink::PE_MediaSampleReceived)
 	{
-		if (pSource == &m_JuryStructInputPin && m_pDescriptionJuryStruct != NULL)
+		if (pSource == &m_JuryStructInputPin && m_pDescJuryStruct != NULL)
 		{
 			ProcessJuryInput(pMediaSample);
 		}
@@ -290,42 +292,45 @@ tResult cStateMachine::ProcessJuryInput(IMediaSample* pMediaSample)
 {
 	tInt8 i8ActionID = -2;
 	tInt16 i16entry = -1;
+
 	{
-		// focus for sample read lock
-		__adtf_sample_read_lock_mediadescription(m_pDescriptionJuryStruct, pMediaSample, pCoder);
+			// focus for sample read lock
+			__adtf_sample_read_lock_mediadescription(m_pDescJuryStruct,pMediaSample,pCoder);
+			// get the IDs for the items in the media sample
+			if(!m_bIDsJuryStructSet)
+			{
+					pCoder->GetID("i8ActionID", m_szIDJuryStructI8ActionID);
+					pCoder->GetID("i16ManeuverEntry", m_szIDJuryStructI16ManeuverEntry);
+					m_bIDsJuryStructSet = tTrue;
+			}
 
-		if (!m_bIDsJuryStructSet)
-		{
-			pCoder->GetID("i8ActionID", m_szIDJuryStructI8ActionID);
-			pCoder->GetID("i16ManeuverEntry", m_szIDJuryStructI16ManeuverEntry);
-			m_bIDsJuryStructSet = tTrue;
-		}
-
-		pCoder->Get(m_szIDJuryStructI8ActionID, (tVoid*)&i8ActionID);
-		pCoder->Get(m_szIDJuryStructI16ManeuverEntry, (tVoid*)&i16entry);
+			pCoder->Get(m_szIDJuryStructI8ActionID, (tVoid*)&i8ActionID);
+			pCoder->Get(m_szIDJuryStructI16ManeuverEntry, (tVoid*)&i16entry);
 	}
 
 	if (i8ActionID == action_GETREADY && m_runState != runState_ready)
-	{
-		//LOG_INFO(cString::Format("State Machine: Received Request Ready with maneuver ID %d",i16entry));
-		ChangeRunState(runState_ready);
-		SendState(stateCar_READY);
-	}
-	else if (i8ActionID == action_START && m_runState != runState_running)
-	{
-		//LOG_INFO(cString::Format("State Machine: Received Run with maneuver ID %d",i16entry));
-		ChangeRunState(runState_running);
-		SendState(stateCar_RUNNING);
+		{
+			//LOG_INFO(cString::Format("State Machine: Received Request Ready with maneuver ID %d",i16entry));
+			ChangeRunState(runState_ready);
+			SendState(stateCar_READY);
+		}
+		else if (i8ActionID == action_START && m_runState != runState_running)
+		{
+			//LOG_INFO(cString::Format("State Machine: Received Run with maneuver ID %d",i16entry));
+			ChangeRunState(runState_running);
+			SendState(stateCar_RUNNING);
 
-	}
-	else if (i8ActionID == action_STOP && m_runState != runState_stop)
-	{
-		//LOG_INFO(cString::Format("State Machine: Received Stop with maneuver ID %d",i16entry));
-		ChangeRunState(runState_stop);
-		ChangePrimaryState(primaryState_run);
-		SendState(stateCar_STARTUP);		
-	}
+		}
+		else if (i8ActionID == action_STOP && m_runState != runState_stop)
+		{
+			//LOG_INFO(cString::Format("State Machine: Received Stop with maneuver ID %d",i16entry));
+			ChangeRunState(runState_stop);
+			ChangePrimaryState(primaryState_run);
+			SendState(stateCar_STARTUP);
+		}
+
 	RETURN_NOERROR;
+
 }
 
 tResult cStateMachine::SendState(stateCar stateID, tInt16 i16ManeuverEntry)
@@ -666,7 +671,7 @@ tResult cStateMachine::ProcessWheelSampleRight(IMediaSample* pMediaSample)
 
 		pCoderInput->Get(szIDWheelDataUi32WheelTach, (tVoid*)&wheelCountRight);
 
-	}	
+	}
 
 	m_actualWheelTicks = ((wheelCountLeft + wheelCountRight) / 2);
 
@@ -720,16 +725,22 @@ tResult cStateMachine::updateSpeed()
 		m_actualSpeed_changed = false;
 
 		tFloat32 newSpeed = DEFAULT_SPEED;
+
 		if (abs(m_actualSpeedState) < abs(newSpeed))
-			newSpeed = m_actualSpeedState;		
+		{
+			LOG_WARNING(cString::Format("actualSpeedState:%f" , m_actualSpeedState));
+			newSpeed = m_actualSpeedState;
+		}
 
 		if (newSpeed == DEFAULT_SPEED)
 		{
-			newSpeed *= m_actualSpeedUpFactor;			
+			LOG_WARNING(cString::Format("m_actualSpeedUpFactor:%f" , m_actualSpeedUpFactor));
+			newSpeed *= m_actualSpeedUpFactor;
 		}
 
 		if (m_actualSpeedLaneDetection != NO_LD_SPEED && m_actualSpeedState != 0)
 		{
+			LOG_WARNING(cString::Format("lanedetection:%f" , m_actualSpeedLaneDetection));
 			newSpeed = m_actualSpeedLaneDetection;
 		}
 
@@ -798,6 +809,7 @@ tResult cStateMachine::ChangeRunState(runStates newRunState)
 		case runState_running:
 		{
 
+			LOG_WARNING("DEFAULT_SPEED SET");
 			m_actualSpeedState = DEFAULT_SPEED;
 			m_actualSpeed_changed = true;
 			m_EmergencyBreakSince = INT32_MIN;
@@ -843,10 +855,8 @@ tResult cStateMachine::ComputeNextStep()
 
 			//while (angle >= 360)
 			//	angle -= 360;
-			
+
 			//float radAngle = DEG2RAD * angle;
-
-
 		}
 	}
 

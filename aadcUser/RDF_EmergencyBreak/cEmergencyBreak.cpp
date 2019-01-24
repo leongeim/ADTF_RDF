@@ -84,7 +84,7 @@ tResult cEmergencyBreak::Init(tInitStage eStage, __exception)
         RETURN_IF_FAILED(RegisterPin(&m_oOutputEmergencyStatus));
 
         RETURN_IF_FAILED(m_oInputEmergencyBreakSet.Create("EmergencyBreakSet", pTypeEmergencyBreakSetStruct, static_cast<IPinEventSink*>(this)));
-        RETURN_IF_FAILED(RegisterPin(&m_oInputEmergencyBreakSet));  
+        RETURN_IF_FAILED(RegisterPin(&m_oInputEmergencyBreakSet));
     }
 
 
