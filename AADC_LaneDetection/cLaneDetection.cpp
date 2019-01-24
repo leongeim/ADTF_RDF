@@ -7,10 +7,10 @@ Redistribution and use in source and binary forms, with or without modification,
 
 1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
 2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
-3.  All advertising materials mentioning features or use of this software must display the following acknowledgement: “This product includes software developed by the Audi AG and its contributors for Audi Autonomous Driving Cup.”
+3.  All advertising materials mentioning features or use of this software must display the following acknowledgement: ï¿½This product includes software developed by the Audi AG and its contributors for Audi Autonomous Driving Cup.ï¿½
 4.  Neither the name of Audi nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
 
-THIS SOFTWARE IS PROVIDED BY AUDI AG AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL AUDI AG OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+THIS SOFTWARE IS PROVIDED BY AUDI AG AND CONTRIBUTORS ï¿½AS ISï¿½ AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL AUDI AG OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 **********************************************************************
@@ -239,27 +239,27 @@ ADTF_FILTER_PLUGIN(ADTF_FILTER_DESC,
 	SetPropertyBool("StopLineDetection::distanceOffset" NSSUBPROP_ISCHANGEABLE, tTrue);
 
 	SetPropertyFloat("StopLineDetection::lineLength", 25);
-	SetPropertyStr("StopLineDetection::lineLength" NSSUBPROP_DESCRIPTION, "Länge der Stoplinie");
+	SetPropertyStr("StopLineDetection::lineLength" NSSUBPROP_DESCRIPTION, "Lï¿½nge der Stoplinie");
 	SetPropertyBool("StopLineDetection::lineLength" NSSUBPROP_ISCHANGEABLE, tTrue);
 
 	SetPropertyFloat("StopLineDetection::lengthOffset", 5);
-	SetPropertyStr("StopLineDetection::lengthOffset" NSSUBPROP_DESCRIPTION, "Offset der LinienLänge");
+	SetPropertyStr("StopLineDetection::lengthOffset" NSSUBPROP_DESCRIPTION, "Offset der LinienLï¿½nge");
 	SetPropertyBool("StopLineDetection::lengthOffset" NSSUBPROP_ISCHANGEABLE, tTrue);
 
 	SetPropertyInt("CrossDetection::fourCrossLowerLeftX", 5);
-	SetPropertyStr("CrossDetection::fourCrossLowerLeftX" NSSUBPROP_DESCRIPTION, "ROI Koordinaten für vierer Kreuzung");
+	SetPropertyStr("CrossDetection::fourCrossLowerLeftX" NSSUBPROP_DESCRIPTION, "ROI Koordinaten fï¿½r vierer Kreuzung");
 	SetPropertyBool("CrossDetection::fourCrossLowerLeftX" NSSUBPROP_ISCHANGEABLE, tTrue);
 
 	SetPropertyInt("CrossDetection::fourCrossLowerLeftY", 5);
-	SetPropertyStr("CrossDetection::fourCrossLowerLeftY" NSSUBPROP_DESCRIPTION, "ROI Koordinaten für vierer Kreuzung");
+	SetPropertyStr("CrossDetection::fourCrossLowerLeftY" NSSUBPROP_DESCRIPTION, "ROI Koordinaten fï¿½r vierer Kreuzung");
 	SetPropertyBool("CrossDetection::fourCrossLowerLeftY" NSSUBPROP_ISCHANGEABLE, tTrue);
 
 	SetPropertyInt("CrossDetection::fourCrossUpperRightX", 5);
-	SetPropertyStr("CrossDetection::fourCrossUpperRightX" NSSUBPROP_DESCRIPTION, "ROI Koordinaten für vierer Kreuzung");
+	SetPropertyStr("CrossDetection::fourCrossUpperRightX" NSSUBPROP_DESCRIPTION, "ROI Koordinaten fï¿½r vierer Kreuzung");
 	SetPropertyBool("CrossDetection::fourCrossUpperRightX" NSSUBPROP_ISCHANGEABLE, tTrue);
 
 	SetPropertyInt("CrossDetection::fourCrossUpperRightY", 5);
-	SetPropertyStr("CrossDetection::fourCrossUpperRightY" NSSUBPROP_DESCRIPTION, "ROI Koordinaten für vierer Kreuzung");
+	SetPropertyStr("CrossDetection::fourCrossUpperRightY" NSSUBPROP_DESCRIPTION, "ROI Koordinaten fï¿½r vierer Kreuzung");
 	SetPropertyBool("CrossDetection::fourCrossUpperRightY" NSSUBPROP_ISCHANGEABLE, tTrue);
 
 	SetPropertyInt("Maneuver::VerticalTicks", 20);
@@ -796,8 +796,9 @@ tResult cLaneDetection::ProcessVideo(IMediaSample* pSample)
 
 	tFloat32 sAngle = 0;
 
-	//Wir haben keine Straße
+	//Wir haben keine Straï¿½e
 	if (EME_SEARCH_NO_STREET_COUNTER > 5) {
+			LOG_INFO("Wir haben keine StraÃŸe!!");
 		// Wenn wir zu weit links sind
 		if (last_right_line[0] > m_filterProperties.RightLowerRightX || computeAngleFromVec4i(last_right_line) >= 10.0f) {
 			// fahren wir nach rechts
@@ -810,7 +811,8 @@ tResult cLaneDetection::ProcessVideo(IMediaSample* pSample)
 		}
 	}
 	else {
-		// Wir haben eine Straße alles ist super
+		LOG_INFO("Wir haben eine StraÃŸe!");
+		// Wir haben eine Straï¿½e alles ist super
 		sAngle = computeSteeringAngle(nearestLineToCarLeft, nearestLineToCarMiddle, nearestLineToCarRight, outputImage);
 	}
 	transmitSteeringAngle(sAngle);
@@ -1005,7 +1007,8 @@ tResult cLaneDetection::detectLane(Mat & outputImage, vector<Vec4i> &lines, Vec4
 	int distanceOffset = 10;
 	int distanceOffsetY = 50;
 
-	if (EMERGENCY_SEARCH) {
+	if (EMERGENCY_SEARCH)
+	{
 		for (unsigned int i = 0; i < lines.size(); i++) {
 			int xVal = lines[i][0];
 			int yVal = lines[i][1];
@@ -1045,7 +1048,7 @@ tResult cLaneDetection::detectLane(Mat & outputImage, vector<Vec4i> &lines, Vec4
 				leftLine.push_back(lines[i]);
 			}
 		}
-		// Keine Straße gefunden
+		// Keine Straï¿½e gefunden
 		if (nearestLineToCarRight == Vec4i(0, 0, 0, 0)) {
 			EME_SEARCH_NO_STREET_COUNTER++;
 		}
@@ -1086,7 +1089,7 @@ tResult cLaneDetection::detectLane(Mat & outputImage, vector<Vec4i> &lines, Vec4
 				if ((xVal > m_filterProperties.RightUpperLeftX - offsetRight) && (xVal < m_filterProperties.RightUpperRightX - offsetRight) &&
 					(yVal < m_filterProperties.RightLowerLeftY) && (yVal > m_filterProperties.RightUpperRightY)) {
 					//LOG_INFO(adtf_util::cString::Format("OffsetRight: %i %i %f %i %i %i", xVal, yVal, offsetRight,m_filterProperties.RightLowerLeftY - m_filterProperties.RightUpperLeftY, m_filterProperties.RightUpperLeftX - m_filterProperties.RightLowerLeftX, yVal -m_filterProperties.RightUpperLeftY));
-					//Nehme die Linie whärend der ersten 5 frames oder wenn seit N frames keine Linie mehr gefunden wurde
+					//Nehme die Linie whï¿½rend der ersten 5 frames oder wenn seit N frames keine Linie mehr gefunden wurde
 					if (goThroughCounter < 5 || faultyLineCounterRight > m_filterProperties.faultyCounterThreshold) {
 						rightLine.push_back(lines[i]);
 					}
@@ -1229,9 +1232,9 @@ tResult cLaneDetection::detectLane(Mat & outputImage, vector<Vec4i> &lines, Vec4
 			faultyLineCounterRight = (wheelCountLeft + wheelCountRight) / 2;
 		}
 
-		
 
-		// Wir haben eine straße
+
+		// Wir haben eine straï¿½e
 		if (faultyLineCounterLeft == -1 && faultyLineCounterMiddle == -1 && faultyLineCounterRight == -1) {
 			last_left_line = nearestLineToCarLeft;
 			last_middle_line = nearestLineToCarMiddle;
@@ -1255,7 +1258,7 @@ tResult cLaneDetection::detectLane(Mat & outputImage, vector<Vec4i> &lines, Vec4
 	}
 
 	//////!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	/// Beim fünften Durchlauf werden die Werte der aktuellen nearestLineToCar gespeichert
+	/// Beim fï¿½nften Durchlauf werden die Werte der aktuellen nearestLineToCar gespeichert
 	Vec4i Test;
 	Test.zeros();
 	if (goThroughCounter >= 5) {
@@ -1525,7 +1528,7 @@ tResult cLaneDetection::adaptROI(Vec4i &lineRight, Vec4i &lineMiddle, Vec4i &lin
 
 	//TODO Default Werte aus File holen
 
-	if ((wheelCountLeft + wheelCountRight) / 2 - faultyLineCounterRight > m_filterProperties.faultyCounterThreshold && faultyLineCounterRight != -1 || lineRight == Vec4i(0, 0, 0, 0)) { // TODO Offsets ändern
+	if ((wheelCountLeft + wheelCountRight) / 2 - faultyLineCounterRight > m_filterProperties.faultyCounterThreshold && faultyLineCounterRight != -1 || lineRight == Vec4i(0, 0, 0, 0)) { // TODO Offsets ï¿½ndern
 		if (faultyLineCounterMiddle == -1) {
 			m_filterProperties.RightUpperLeftX = 630 + sin(laneAngleMiddle)*m_filterProperties.FovCurveLeft + sin(laneAngleMiddle)*m_filterProperties.curvatureOffsetMid;
 			m_filterProperties.RightUpperRightX = 710 + sin(laneAngleMiddle)*m_filterProperties.FovCurveLeft + sin(laneAngleMiddle)*m_filterProperties.curvatureOffsetMid;
