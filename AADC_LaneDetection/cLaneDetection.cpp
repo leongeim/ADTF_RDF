@@ -798,7 +798,7 @@ tResult cLaneDetection::ProcessVideo(IMediaSample* pSample)
 
 	//Wir haben keine Stra�e
 	if (EME_SEARCH_NO_STREET_COUNTER > 5) {
-			LOG_INFO("Wir haben keine Straße!!");
+
 		// Wenn wir zu weit links sind
 		if (last_right_line[0] > m_filterProperties.RightLowerRightX || computeAngleFromVec4i(last_right_line) >= 10.0f) {
 			// fahren wir nach rechts
@@ -811,7 +811,7 @@ tResult cLaneDetection::ProcessVideo(IMediaSample* pSample)
 		}
 	}
 	else {
-		LOG_INFO("Wir haben eine Straße!");
+
 		// Wir haben eine Stra�e alles ist super
 		sAngle = computeSteeringAngle(nearestLineToCarLeft, nearestLineToCarMiddle, nearestLineToCarRight, outputImage);
 	}
@@ -1029,7 +1029,7 @@ tResult cLaneDetection::detectLane(Mat & outputImage, vector<Vec4i> &lines, Vec4
 							last_right_line = lines[k];
 							last_middle_line = lines[j];
 							last_left_line = lines[i];
-							// LOG_INFO(cString::Format("EME ANGLES: %f %f %f", angleLeft, angleMiddle, angleLeft));
+							LOG_INFO(cString::Format("EME ANGLES: %f %f %f", angleLeft, angleMiddle, angleLeft));
 							break;
 						}
 					}
@@ -1064,11 +1064,12 @@ tResult cLaneDetection::detectLane(Mat & outputImage, vector<Vec4i> &lines, Vec4
 		}
 	}
 	else {
-		for (unsigned int i = 0; i < lines.size(); i++) {
+		static int run = 0;
+		for (unsigned int i = 0; i < lines.size(); i++)
+		{
 			int xVal = lines[i][0];
 			int yVal = lines[i][1];
 			float angle = computeAngleFromVec4i(lines[i]);
-
 			if (angle < m_filterProperties.maxAngle && angle > m_filterProperties.minAngle) {
 				//Offset if poly ROI
 				float offsetRight = 0;
@@ -1084,11 +1085,12 @@ tResult cLaneDetection::detectLane(Mat & outputImage, vector<Vec4i> &lines, Vec4
 					offsetLeft = float(m_filterProperties.LeftUpperLeftX - m_filterProperties.LeftLowerLeftX) / (m_filterProperties.LeftLowerLeftY - m_filterProperties.LeftUpperLeftY) * (yVal - m_filterProperties.LeftUpperLeftY);
 				}
 
+				LOG_INFO(cString::Format("run %d; xval %d; y val %d",run, xVal, yVal));
 				//!!RECHTE LINIE
 				//Betrachte die Linie wenn sie im ROI ist
 				if ((xVal > m_filterProperties.RightUpperLeftX - offsetRight) && (xVal < m_filterProperties.RightUpperRightX - offsetRight) &&
 					(yVal < m_filterProperties.RightLowerLeftY) && (yVal > m_filterProperties.RightUpperRightY)) {
-					//LOG_INFO(adtf_util::cString::Format("OffsetRight: %i %i %f %i %i %i", xVal, yVal, offsetRight,m_filterProperties.RightLowerLeftY - m_filterProperties.RightUpperLeftY, m_filterProperties.RightUpperLeftX - m_filterProperties.RightLowerLeftX, yVal -m_filterProperties.RightUpperLeftY));
+					LOG_INFO("RIGHT LINE");
 					//Nehme die Linie wh�rend der ersten 5 frames oder wenn seit N frames keine Linie mehr gefunden wurde
 					if (goThroughCounter < 5 || faultyLineCounterRight > m_filterProperties.faultyCounterThreshold) {
 						rightLine.push_back(lines[i]);
@@ -1118,6 +1120,7 @@ tResult cLaneDetection::detectLane(Mat & outputImage, vector<Vec4i> &lines, Vec4
 				//!!MITTLERE LINIE
 				else if ((xVal > m_filterProperties.MidUpperLeftX - offsetMid) && (xVal < m_filterProperties.MidUpperRightX - offsetMid) &&
 					(yVal < m_filterProperties.MidLowerLeftY) && (yVal > m_filterProperties.MidUpperRightY)) {
+						LOG_INFO("MIDDLE LINE");
 					if (goThroughCounter < 5 || faultyLineCounterMiddle > m_filterProperties.faultyCounterThreshold) {
 						middleLine.push_back(lines[i]);
 					}
@@ -1145,6 +1148,7 @@ tResult cLaneDetection::detectLane(Mat & outputImage, vector<Vec4i> &lines, Vec4
 				//!!LINKE LINIE
 				else if ((xVal > m_filterProperties.LeftUpperLeftX - offsetLeft) && (xVal < m_filterProperties.LeftUpperRightX - offsetLeft) &&
 					(yVal < m_filterProperties.LeftLowerLeftY) && (yVal > m_filterProperties.LeftUpperRightY)) {
+						LOG_INFO("LEFT LINE");
 					if (goThroughCounter < 5 || faultyLineCounterLeft > m_filterProperties.faultyCounterThreshold) {
 						leftLine.push_back(lines[i]);
 					}
@@ -1171,6 +1175,8 @@ tResult cLaneDetection::detectLane(Mat & outputImage, vector<Vec4i> &lines, Vec4
 				}
 			}
 		}
+
+		run++;
 
 
 
@@ -1530,84 +1536,96 @@ tResult cLaneDetection::adaptROI(Vec4i &lineRight, Vec4i &lineMiddle, Vec4i &lin
 
 	if ((wheelCountLeft + wheelCountRight) / 2 - faultyLineCounterRight > m_filterProperties.faultyCounterThreshold && faultyLineCounterRight != -1 || lineRight == Vec4i(0, 0, 0, 0)) { // TODO Offsets �ndern
 		if (faultyLineCounterMiddle == -1) {
-			m_filterProperties.RightUpperLeftX = 630 + sin(laneAngleMiddle)*m_filterProperties.FovCurveLeft + sin(laneAngleMiddle)*m_filterProperties.curvatureOffsetMid;
-			m_filterProperties.RightUpperRightX = 710 + sin(laneAngleMiddle)*m_filterProperties.FovCurveLeft + sin(laneAngleMiddle)*m_filterProperties.curvatureOffsetMid;
-			m_filterProperties.RightLowerLeftX = 630 + sin(laneAngleMiddle)*m_filterProperties.curvatureOffsetMid;
-			m_filterProperties.RightLowerRightX = 710 + sin(laneAngleMiddle)*m_filterProperties.curvatureOffsetMid;
+			m_filterProperties.RightUpperLeftX = 700 + sin(laneAngleMiddle)*m_filterProperties.FovCurveLeft + sin(laneAngleMiddle)*m_filterProperties.curvatureOffsetMid;
+			m_filterProperties.RightUpperRightX = 780 + sin(laneAngleMiddle)*m_filterProperties.FovCurveLeft + sin(laneAngleMiddle)*m_filterProperties.curvatureOffsetMid;
+			m_filterProperties.RightLowerLeftX = 700 + sin(laneAngleMiddle)*m_filterProperties.curvatureOffsetMid;
+			m_filterProperties.RightLowerRightX = 780 + sin(laneAngleMiddle)*m_filterProperties.curvatureOffsetMid;
 		}
 		else if (faultyLineCounterLeft == -1) {
-			m_filterProperties.RightUpperLeftX = 630 + sin(laneAngleLeft)*m_filterProperties.FovCurveLeft + sin(laneAngleLeft)*m_filterProperties.curvatureOffsetLeft;
-			m_filterProperties.RightUpperRightX = 710 + sin(laneAngleLeft)*m_filterProperties.FovCurveLeft + sin(laneAngleLeft)*m_filterProperties.curvatureOffsetLeft;
-			m_filterProperties.RightLowerLeftX = 630 + sin(laneAngleLeft)*m_filterProperties.curvatureOffsetLeft;
-			m_filterProperties.RightLowerRightX = 710 + sin(laneAngleLeft)*m_filterProperties.curvatureOffsetLeft;
+			m_filterProperties.RightUpperLeftX = 700 + sin(laneAngleLeft)*m_filterProperties.FovCurveLeft + sin(laneAngleLeft)*m_filterProperties.curvatureOffsetLeft;
+			m_filterProperties.RightUpperRightX = 780 + sin(laneAngleLeft)*m_filterProperties.FovCurveLeft + sin(laneAngleLeft)*m_filterProperties.curvatureOffsetLeft;
+			m_filterProperties.RightLowerLeftX = 700 + sin(laneAngleLeft)*m_filterProperties.curvatureOffsetLeft;
+			m_filterProperties.RightLowerRightX = 780 + sin(laneAngleLeft)*m_filterProperties.curvatureOffsetLeft;
 		}
 		else {
-			m_filterProperties.RightUpperLeftX = 630;
-			m_filterProperties.RightUpperRightX = 710;
-			m_filterProperties.RightLowerLeftX = 630;
-			m_filterProperties.RightLowerRightX = 710;
+			m_filterProperties.RightUpperLeftX = 700;
+			m_filterProperties.RightUpperRightX = 780;
+			m_filterProperties.RightLowerLeftX = 700;
+			m_filterProperties.RightLowerRightX = 780;
+			//m_filterProperties.RightUpperLeftX = 630;
+			//m_filterProperties.RightUpperRightX = 710;
+			//m_filterProperties.RightLowerLeftX = 630;
+			//m_filterProperties.RightLowerRightX = 710;
 		}
 	}
 	else {
-		m_filterProperties.RightUpperLeftX = 630 + sin(laneAngleRight)*m_filterProperties.FovCurveLeft + sin(laneAngleRight)*m_filterProperties.curvatureOffsetRight;
-		m_filterProperties.RightUpperRightX = 710 + sin(laneAngleRight)*m_filterProperties.FovCurveLeft + sin(laneAngleRight)*m_filterProperties.curvatureOffsetRight;
-		m_filterProperties.RightLowerLeftX = 630 + sin(laneAngleRight)*m_filterProperties.curvatureOffsetRight;
-		m_filterProperties.RightLowerRightX = 710 + sin(laneAngleRight)*m_filterProperties.curvatureOffsetRight;
+		m_filterProperties.RightUpperLeftX = 700 + sin(laneAngleRight)*m_filterProperties.FovCurveLeft + sin(laneAngleRight)*m_filterProperties.curvatureOffsetRight;
+		m_filterProperties.RightUpperRightX = 780 + sin(laneAngleRight)*m_filterProperties.FovCurveLeft + sin(laneAngleRight)*m_filterProperties.curvatureOffsetRight;
+		m_filterProperties.RightLowerLeftX = 700 + sin(laneAngleRight)*m_filterProperties.curvatureOffsetRight;
+		m_filterProperties.RightLowerRightX = 780 + sin(laneAngleRight)*m_filterProperties.curvatureOffsetRight;
 	}
 
 	if ((wheelCountLeft + wheelCountRight) / 2 - faultyLineCounterLeft > m_filterProperties.faultyCounterThreshold && faultyLineCounterLeft != -1 || lineLeft == Vec4i(0, 0, 0, 0)) {
 		if (faultyLineCounterRight == -1) {
-			m_filterProperties.LeftUpperLeftX = 420 + sin(laneAngleRight)*m_filterProperties.FovCurveLeft + sin(laneAngleRight)*m_filterProperties.curvatureOffsetRight;
-			m_filterProperties.LeftUpperRightX = 500 + sin(laneAngleRight)*m_filterProperties.FovCurveLeft + sin(laneAngleRight)*m_filterProperties.curvatureOffsetRight;
-			m_filterProperties.LeftLowerLeftX = 420 + sin(laneAngleRight)*m_filterProperties.curvatureOffsetRight;
-			m_filterProperties.LeftLowerRightX = 500 + sin(laneAngleRight)*m_filterProperties.curvatureOffsetRight;
+			m_filterProperties.LeftUpperLeftX = 350 + sin(laneAngleRight)*m_filterProperties.FovCurveLeft + sin(laneAngleRight)*m_filterProperties.curvatureOffsetRight;
+			m_filterProperties.LeftUpperRightX = 430 + sin(laneAngleRight)*m_filterProperties.FovCurveLeft + sin(laneAngleRight)*m_filterProperties.curvatureOffsetRight;
+			m_filterProperties.LeftLowerLeftX = 350 + sin(laneAngleRight)*m_filterProperties.curvatureOffsetRight;
+			m_filterProperties.LeftLowerRightX = 430 + sin(laneAngleRight)*m_filterProperties.curvatureOffsetRight;
 		}
 		else if (faultyLineCounterMiddle == -1) {
-			m_filterProperties.LeftUpperLeftX = 420 + sin(laneAngleMiddle)*m_filterProperties.FovCurveLeft + sin(laneAngleMiddle)*m_filterProperties.curvatureOffsetMid;
-			m_filterProperties.LeftUpperRightX = 500 + sin(laneAngleMiddle)*m_filterProperties.FovCurveLeft + sin(laneAngleMiddle)*m_filterProperties.curvatureOffsetMid;
-			m_filterProperties.LeftLowerLeftX = 420 + sin(laneAngleMiddle)*m_filterProperties.curvatureOffsetMid;
-			m_filterProperties.LeftLowerRightX = 500 + sin(laneAngleMiddle)*m_filterProperties.curvatureOffsetMid;
+			m_filterProperties.LeftUpperLeftX = 350 + sin(laneAngleMiddle)*m_filterProperties.FovCurveLeft + sin(laneAngleMiddle)*m_filterProperties.curvatureOffsetMid;
+			m_filterProperties.LeftUpperRightX = 430 + sin(laneAngleMiddle)*m_filterProperties.FovCurveLeft + sin(laneAngleMiddle)*m_filterProperties.curvatureOffsetMid;
+			m_filterProperties.LeftLowerLeftX = 350 + sin(laneAngleMiddle)*m_filterProperties.curvatureOffsetMid;
+			m_filterProperties.LeftLowerRightX = 430 + sin(laneAngleMiddle)*m_filterProperties.curvatureOffsetMid;
 		}
 		else
 		{
-			m_filterProperties.LeftUpperLeftX = 420;
-			m_filterProperties.LeftUpperRightX = 500;
-			m_filterProperties.LeftLowerLeftX = 420;
-			m_filterProperties.LeftLowerRightX = 500;
+			m_filterProperties.LeftUpperLeftX = 350;
+			m_filterProperties.LeftUpperRightX = 430;
+			m_filterProperties.LeftLowerLeftX = 350;
+			m_filterProperties.LeftLowerRightX = 430;
+			//m_filterProperties.LeftUpperLeftX = 420;
+			//m_filterProperties.LeftUpperRightX = 500;
+			//m_filterProperties.LeftLowerLeftX = 420;
+			//m_filterProperties.LeftLowerRightX = 500;
 		}
 	}
 	else {
-		m_filterProperties.LeftUpperLeftX = 420 + sin(laneAngleLeft)*m_filterProperties.FovCurveLeft + sin(laneAngleLeft)*m_filterProperties.curvatureOffsetLeft;;
-		m_filterProperties.LeftUpperRightX = 500 + sin(laneAngleLeft)*m_filterProperties.FovCurveLeft + sin(laneAngleLeft)*m_filterProperties.curvatureOffsetLeft;;
-		m_filterProperties.LeftLowerLeftX = 420 + sin(laneAngleLeft)*m_filterProperties.curvatureOffsetLeft;
-		m_filterProperties.LeftLowerRightX = 500 + sin(laneAngleLeft)*m_filterProperties.curvatureOffsetLeft;
+		m_filterProperties.LeftUpperLeftX = 350 + sin(laneAngleLeft)*m_filterProperties.FovCurveLeft + sin(laneAngleLeft)*m_filterProperties.curvatureOffsetLeft;;
+		m_filterProperties.LeftUpperRightX = 430 + sin(laneAngleLeft)*m_filterProperties.FovCurveLeft + sin(laneAngleLeft)*m_filterProperties.curvatureOffsetLeft;;
+		m_filterProperties.LeftLowerLeftX = 350 + sin(laneAngleLeft)*m_filterProperties.curvatureOffsetLeft;
+		m_filterProperties.LeftLowerRightX = 430 + sin(laneAngleLeft)*m_filterProperties.curvatureOffsetLeft;
 	}
 	if ((wheelCountLeft + wheelCountRight) / 2 - faultyLineCounterMiddle > m_filterProperties.faultyCounterThreshold && faultyLineCounterMiddle != -1 || lineMiddle == Vec4i(0, 0, 0, 0)) {
 		if (faultyLineCounterRight == -1) {
-			m_filterProperties.MidUpperLeftX = 550 + sin(laneAngleRight)*m_filterProperties.FovCurveLeft + sin(laneAngleRight)*m_filterProperties.curvatureOffsetRight;
-			m_filterProperties.MidUpperRightX = 610 + sin(laneAngleRight)*m_filterProperties.FovCurveLeft + sin(laneAngleRight)*m_filterProperties.curvatureOffsetRight;
-			m_filterProperties.MidLowerLeftX = 550 + sin(laneAngleRight)*m_filterProperties.curvatureOffsetRight;
-			m_filterProperties.MidLowerRightX = 610 + sin(laneAngleRight)*m_filterProperties.curvatureOffsetRight;
+			m_filterProperties.MidUpperLeftX = 530 + sin(laneAngleRight)*m_filterProperties.FovCurveLeft + sin(laneAngleRight)*m_filterProperties.curvatureOffsetRight;
+			m_filterProperties.MidUpperRightX = 590 + sin(laneAngleRight)*m_filterProperties.FovCurveLeft + sin(laneAngleRight)*m_filterProperties.curvatureOffsetRight;
+			m_filterProperties.MidLowerLeftX = 530 + sin(laneAngleRight)*m_filterProperties.curvatureOffsetRight;
+			m_filterProperties.MidLowerRightX = 590 + sin(laneAngleRight)*m_filterProperties.curvatureOffsetRight;
 		}
 		else if (faultyLineCounterLeft == -1) {
-			m_filterProperties.MidUpperLeftX = 550 + sin(laneAngleLeft)*m_filterProperties.FovCurveLeft + sin(laneAngleLeft)*m_filterProperties.curvatureOffsetLeft;
-			m_filterProperties.MidUpperRightX = 610 + sin(laneAngleLeft)*m_filterProperties.FovCurveLeft + sin(laneAngleLeft)*m_filterProperties.curvatureOffsetLeft;
-			m_filterProperties.MidLowerLeftX = 550 + sin(laneAngleLeft)*m_filterProperties.curvatureOffsetLeft;
-			m_filterProperties.MidLowerRightX = 610 + sin(laneAngleLeft)*m_filterProperties.curvatureOffsetLeft;
+			m_filterProperties.MidUpperLeftX = 530 + sin(laneAngleLeft)*m_filterProperties.FovCurveLeft + sin(laneAngleLeft)*m_filterProperties.curvatureOffsetLeft;
+			m_filterProperties.MidUpperRightX = 590 + sin(laneAngleLeft)*m_filterProperties.FovCurveLeft + sin(laneAngleLeft)*m_filterProperties.curvatureOffsetLeft;
+			m_filterProperties.MidLowerLeftX = 530 + sin(laneAngleLeft)*m_filterProperties.curvatureOffsetLeft;
+			m_filterProperties.MidLowerRightX = 590 + sin(laneAngleLeft)*m_filterProperties.curvatureOffsetLeft;
 		}
 		else
 		{
-			m_filterProperties.MidUpperLeftX = 550;
-			m_filterProperties.MidUpperRightX = 610;
-			m_filterProperties.MidLowerLeftX = 550;
-			m_filterProperties.MidLowerRightX = 610;
+			m_filterProperties.MidUpperLeftX = 530;
+			m_filterProperties.MidUpperRightX = 590;
+			m_filterProperties.MidLowerLeftX = 530;
+			m_filterProperties.MidLowerRightX = 590;
+			//m_filterProperties.MidUpperLeftX = 550;
+			//m_filterProperties.MidUpperRightX = 610;
+			//m_filterProperties.MidLowerLeftX = 550;
+			//m_filterProperties.MidLowerRightX = 610;
 		}
 	}
 	else {
-		m_filterProperties.MidUpperLeftX = 550 + sin(laneAngleMiddle)*m_filterProperties.FovCurveLeft + sin(laneAngleMiddle)*m_filterProperties.curvatureOffsetMid;;
-		m_filterProperties.MidUpperRightX = 610 + sin(laneAngleMiddle)*m_filterProperties.FovCurveLeft + sin(laneAngleMiddle)*m_filterProperties.curvatureOffsetMid;;
-		m_filterProperties.MidLowerLeftX = 550 + sin(laneAngleMiddle)*m_filterProperties.curvatureOffsetMid;
-		m_filterProperties.MidLowerRightX = 610 + sin(laneAngleMiddle)*m_filterProperties.curvatureOffsetMid;
+		m_filterProperties.MidUpperLeftX = 530 + sin(laneAngleMiddle)*m_filterProperties.FovCurveLeft + sin(laneAngleMiddle)*m_filterProperties.curvatureOffsetMid;;
+		m_filterProperties.MidUpperRightX = 590 + sin(laneAngleMiddle)*m_filterProperties.FovCurveLeft + sin(laneAngleMiddle)*m_filterProperties.curvatureOffsetMid;;
+		m_filterProperties.MidLowerLeftX = 530 + sin(laneAngleMiddle)*m_filterProperties.curvatureOffsetMid;
+		m_filterProperties.MidLowerRightX = 590 + sin(laneAngleMiddle)*m_filterProperties.curvatureOffsetMid;
 	}
 
 	RETURN_NOERROR;
