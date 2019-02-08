@@ -810,7 +810,6 @@ tResult cLaneDetection::ProcessVideo(IMediaSample* pSample)
 		}
 	}
 	else {
-		LOG_INFO("Wir haben eine Straße!");
 		// Wir haben eine Stra�e alles ist super
 		sAngle = computeSteeringAngle(nearestLineToCarLeft, nearestLineToCarMiddle, nearestLineToCarRight, outputImage);
 	}
@@ -994,6 +993,7 @@ tResult cLaneDetection::detectLane(Mat & outputImage, vector<Vec4i> &lines, Vec4
 
 	if (EMERGENCY_SEARCH)
 	{
+		LOG_INFO(cString::Format("EMERGENCY SEARCH"));	
 		for (unsigned int i = 0; i < lines.size(); i++)
 		{
 			int xVal = lines[i][0];
@@ -1003,9 +1003,10 @@ tResult cLaneDetection::detectLane(Mat & outputImage, vector<Vec4i> &lines, Vec4
 			{
 				float angleRight = computeAngleFromVec4i(lines[j]);
 				if (angleMiddle < angleRight + angleOffsetEMER && angleMiddle > angleRight - angleOffsetEMER &&
-					(lines[k][0] - lines[j][0]) > MidToRight - distanceOffset && (lines[k][0] - lines[j][0]) < MidToRight + distanceOffset &&
-					(lines[k][1] < lines[j][1] + distanceOffsetY && lines[k][1] > lines[j][1] - distanceOffsetY))
-				{					
+					(lines[j][0] - lines[i][0]) > MidToRight - distanceOffset && (lines[j][0] - lines[i][0]) < MidToRight + distanceOffset &&
+					(lines[j][1] < lines[i][1] + distanceOffsetY && lines[j][1] > lines[i][1] - distanceOffsetY))
+				{		
+					LOG_INFO(cString::Format("EMERGENCY SEARCH SUCCESS"));			
 					nearestLineToCarMiddle = lines[i];
 					nearestLineToCarRight = lines[j];
 					last_right_line = lines[j];
@@ -1046,7 +1047,8 @@ tResult cLaneDetection::detectLane(Mat & outputImage, vector<Vec4i> &lines, Vec4
 	}
 	else
 	{
-		for (unsigned int i = 0; i < lines.size(); i++) {
+		for (unsigned int i = 0; i < lines.size(); i++) 
+		{
 			int xVal = lines[i][0];
 			int yVal = lines[i][1];
 			float angle = computeAngleFromVec4i(lines[i]);
@@ -1072,6 +1074,7 @@ tResult cLaneDetection::detectLane(Mat & outputImage, vector<Vec4i> &lines, Vec4
 				if ((xVal > m_filterProperties.RightUpperLeftX - offsetRight) && (xVal < m_filterProperties.RightUpperRightX - offsetRight) &&
 					(yVal < m_filterProperties.RightLowerLeftY) && (yVal > m_filterProperties.RightUpperRightY))
 				{
+					LOG_INFO(cString::Format("Right LINE detected"));
 					//LOG_INFO(adtf_util::cString::Format("OffsetRight: %i %i %f %i %i %i", xVal, yVal, offsetRight,m_filterProperties.RightLowerLeftY - m_filterProperties.RightUpperLeftY, m_filterProperties.RightUpperLeftX - m_filterProperties.RightLowerLeftX, yVal -m_filterProperties.RightUpperLeftY));
 					//Nehme die Linie wh�rend der ersten 5 frames oder wenn seit N frames keine Linie mehr gefunden wurde
 					if (goThroughCounter < 5 || faultyLineCounterRight > m_filterProperties.faultyCounterThreshold) {
@@ -1107,7 +1110,9 @@ tResult cLaneDetection::detectLane(Mat & outputImage, vector<Vec4i> &lines, Vec4
 				}
 				//!!MITTLERE LINIE
 				else if ((xVal > m_filterProperties.MidUpperLeftX - offsetMid) && (xVal < m_filterProperties.MidUpperRightX - offsetMid) &&
-					(yVal < m_filterProperties.MidLowerLeftY) && (yVal > m_filterProperties.MidUpperRightY)) {
+					(yVal < m_filterProperties.MidLowerLeftY) && (yVal > m_filterProperties.MidUpperRightY)) 
+				{
+					LOG_INFO(cString::Format("MIDDLE LINE detected"));
 					if (goThroughCounter < 5 || faultyLineCounterMiddle > m_filterProperties.faultyCounterThreshold) {
 						middleLine.push_back(lines[i]);
 					}
@@ -1134,7 +1139,9 @@ tResult cLaneDetection::detectLane(Mat & outputImage, vector<Vec4i> &lines, Vec4
 				}
 				//!!LINKE LINIE
 				else if ((xVal > m_filterProperties.LeftUpperLeftX - offsetLeft) && (xVal < m_filterProperties.LeftUpperRightX - offsetLeft) &&
-					(yVal < m_filterProperties.LeftLowerLeftY) && (yVal > m_filterProperties.LeftUpperRightY)) {
+					(yVal < m_filterProperties.LeftLowerLeftY) && (yVal > m_filterProperties.LeftUpperRightY)) 
+				{
+					LOG_INFO(cString::Format("RIGHT LINE detected"));
 					if (goThroughCounter < 5 || faultyLineCounterLeft > m_filterProperties.faultyCounterThreshold) {
 						leftLine.push_back(lines[i]);
 					}
@@ -1227,6 +1234,7 @@ tResult cLaneDetection::detectLane(Mat & outputImage, vector<Vec4i> &lines, Vec4
 		// Wir haben eine stra�e
 		if (faultyLineCounterMiddle == -1 && faultyLineCounterRight == -1) 
 		{
+			LOG_INFO(cString::Format("STREET DETECTED"));
 			if (faultyLineCounterLeft == -1) 
 			{
 				last_left_line = nearestLineToCarLeft;
@@ -1385,8 +1393,14 @@ tFloat32 cLaneDetection::computeSteeringAngle(Vec4i leftLane, Vec4i middleLane, 
 		laneAngleLeft = laneAngleSumLeft / bufferSize;
 	}
 
-	if (((computeAngleFromVec4i(rightLane) + computeAngleFromVec4i(middleLane)) / 3 > -20.0)
-		&& ((computeAngleFromVec4i(rightLane) + computeAngleFromVec4i(middleLane)) / 3 < 20.0))
+	if(middleLane == Vec4i(0, 0, 0, 0)) { LOG_INFO("middleLane Empty"); }
+	if(rightLane == Vec4i(0, 0, 0, 0)) { LOG_INFO("rightLane Empty"); }
+	float anglemidtemp = computeAngleFromVec4i(middleLane);
+	float anglerighttemp = computeAngleFromVec4i(rightLane);
+	LOG_INFO(cString::Format("ANGLES: middle %f right %f'", anglemidtemp, anglerighttemp));
+
+	if (((computeAngleFromVec4i(rightLane) + computeAngleFromVec4i(middleLane)) / 2 > -20.0)
+		&& ((computeAngleFromVec4i(rightLane) + computeAngleFromVec4i(middleLane)) / 2 < 20.0))
 	{
 		//LOG_INFO("GERADE");
 		if (faultyLineCounterMiddle == -1)
@@ -1414,7 +1428,7 @@ tFloat32 cLaneDetection::computeSteeringAngle(Vec4i leftLane, Vec4i middleLane, 
 		}
 
 	}
-	else if ((computeAngleFromVec4i(rightLane) + computeAngleFromVec4i(middleLane)) / 3 <= -20.0) {
+	else if ((computeAngleFromVec4i(rightLane) + computeAngleFromVec4i(middleLane)) / 2 <= -20.0) {
 		//LOG_INFO("LINKS");
 
 		if (faultyLineCounterRight == -1) {
