@@ -418,6 +418,7 @@ tResult cEmergencyBreak::TransmitEmergencyStatus(bool status)
 
 tResult cEmergencyBreak::TransmitSpeed(tFloat32 speed, tUInt32 timestamp)
 {
+    LOG_INFO(cString::Format("transmit speed %f", speed));
     //use mutex
     __synchronized_obj(m_critSecTransmitControl);
 

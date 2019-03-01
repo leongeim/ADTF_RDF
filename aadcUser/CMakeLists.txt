@@ -47,3 +47,7 @@ add_subdirectory(RDF_EmergencyBreak)
 add_subdirectory(RDF_ImageAdapter)
 add_subdirectory(RDF_SpeedGovernor)
 add_subdirectory(RDF_LightControl)
+add_subdirectory(RDF_LaneDetection)
+#add_subdirectory(RDF_ParkControl)
+#add_subdirectory(RoadSign)
+

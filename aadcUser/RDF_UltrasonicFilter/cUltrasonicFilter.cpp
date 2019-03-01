@@ -173,7 +173,7 @@ tResult cUltrasonicFilter::ProcessUsValues(IMediaSample* pMediaSample)
 
         static int count = 0;
         count++;
-        if(count < 20)  // ignore first 10 samples
+        if(count < 20)  // ignore first 20 samples
             RETURN_NOERROR;
 
         static tFloat32 distanceInput[RINGBUFFER_SIZE][10];
@@ -198,21 +198,30 @@ tResult cUltrasonicFilter::ProcessUsValues(IMediaSample* pMediaSample)
         //jeden Sensor durchgehen
         for(unsigned int i=0; i<10;i++)
         {
-            float minEle = 800.0f;
-            float maxValue = 0.0f;
-            int anzWerte = 0;
+            float minEle = 400.0f;
+            float avgValue = 0.0f;
+            int valueCount = 0;
 
             //Jeden wert pro Sensor durchgehen
             for(unsigned int j = 0; j < RINGBUFFER_SIZE; j++)
             {
+
               //Prüfung ob wert kleiner wie der kleinste Wert ist der bis jetzt gefunden wurde
-                if(distanceInput[j][i] !=-1)
+                if(distanceInput[j][i] <= 400.0f && distanceInput[j][i] > 0.0f)
                 {
                     //maxValue = distancInput;
-                    minEle = distanceInput[j][i];
+                    avgValue += distanceInput[j][i];
+                    valueCount++;
                 }
             }
-            filteredDistance[i]=minEle;
+            if(valueCount == 0)
+            {
+              filteredDistance[i] = minEle;
+            }
+            else
+            {
+              filteredDistance[i] = avgValue / valueCount;
+            }
         }
 
 

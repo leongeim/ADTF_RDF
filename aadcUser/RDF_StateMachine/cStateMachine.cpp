@@ -170,8 +170,6 @@ tResult cStateMachine::Init(tInitStage eStage, __exception)
 		m_szIdOutputSpeedSet = tFalse;
 		m_szIdsUsStructSet = tFalse;
 
-		// default / initial values
-
 		//states
 		m_primaryState = primaryState_run;
 		m_runState = runState_stop;
@@ -205,10 +203,10 @@ tResult cStateMachine::Init(tInitStage eStage, __exception)
 		// Please take a look at the demo_imageproc example for further reference.
 
 		// simulate ready signal from jury
-		//ChangeRunState(runState_ready);
+		ChangeRunState(runState_ready);
 
 		// simulate start signal from jury
-		//ChangeRunState(runState_running);
+		ChangeRunState(runState_running);
 
 		m_actualSpeedUpFactor = 1.0;
     m_bIDsJuryStructSet = false;
@@ -561,21 +559,35 @@ tResult cStateMachine::TransmitEmergencyBreakSet()
 		case runState_ready:
 		case runState_running:
 		{
-			// set only the front sensors
-			if (m_actualSpeedUpFactor > 1.0)
+			if(m_actualSpeedState < 0)
 			{
-				newDistances[1] = 15;
-				newDistances[2] = 40;
-				newDistances[3] = 15;
+			// set only the front sensors
+					if (m_actualSpeedUpFactor > 1.0)
+					{
+						newDistances[0] = 7;
+						newDistances[1] = 15;
+						newDistances[2] = 70;
+						newDistances[3] = 15;
+						newDistances[4] = 7;
+					}
+					else
+					{
+						newDistances[0] = 7;
+						newDistances[1] = 20;
+						newDistances[2] = 80;
+						newDistances[3] = 20;
+						newDistances[4] = 7;
+					}
 			}
 			else
 			{
-				newDistances[1] = 10;
-				newDistances[2] = 30;
-				newDistances[3] = 10;
+					newDistances[7] = 20;
+					newDistances[8] = 70;
+					newDistances[9] = 20;
 			}
-			break;
-		}
+
+				break;
+			}
 
 		case runState_parking:
 		{
@@ -720,32 +732,31 @@ tResult cStateMachine::TransmitSpeed(tFloat32 speed, tUInt32 timestamp)
 
 tResult cStateMachine::updateSpeed()
 {
+	tFloat32 newSpeed = DEFAULT_SPEED;
 	if (m_actualSpeed_changed)
 	{
 		m_actualSpeed_changed = false;
 
-		tFloat32 newSpeed = DEFAULT_SPEED;
+		//tFloat32 newSpeed = DEFAULT_SPEED;
 
 		if (abs(m_actualSpeedState) < abs(newSpeed))
 		{
-			LOG_WARNING(cString::Format("actualSpeedState:%f" , m_actualSpeedState));
 			newSpeed = m_actualSpeedState;
 		}
 
 		if (newSpeed == DEFAULT_SPEED)
 		{
-			LOG_WARNING(cString::Format("m_actualSpeedUpFactor:%f" , m_actualSpeedUpFactor));
 			newSpeed *= m_actualSpeedUpFactor;
 		}
 
 		if (m_actualSpeedLaneDetection != NO_LD_SPEED && m_actualSpeedState != 0)
 		{
-			LOG_WARNING(cString::Format("lanedetection:%f" , m_actualSpeedLaneDetection));
 			newSpeed = m_actualSpeedLaneDetection;
 		}
 
 		TransmitSpeed(newSpeed, 0);
 	}
+	TransmitSpeed(newSpeed, 0);
 
 	RETURN_NOERROR;
 }
@@ -809,7 +820,7 @@ tResult cStateMachine::ChangeRunState(runStates newRunState)
 		case runState_running:
 		{
 
-			LOG_WARNING("DEFAULT_SPEED SET");
+			//LOG_WARNING("DEFAULT_SPEED SET");
 			m_actualSpeedState = DEFAULT_SPEED;
 			m_actualSpeed_changed = true;
 			m_EmergencyBreakSince = INT32_MIN;

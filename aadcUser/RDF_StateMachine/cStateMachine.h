@@ -30,7 +30,7 @@ THIS SOFTWARE IS PROVIDED BY AUDI AG AND CONTRIBUTORS �AS IS� AND ANY EXPRES
 #endif
 #define RAD2DEG static_cast<tFloat32>(180.0/M_PI)
 #define DEG2RAD static_cast<tFloat32>(M_PI/180.0)
-#define DEFAULT_SPEED (-10)
+#define DEFAULT_SPEED (-13)
 #define NO_LD_SPEED 999
 
 
